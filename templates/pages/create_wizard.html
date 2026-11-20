@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Script · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="app-container">
+
+  <!-- ================= WIZARD STEP CONTAINER ================= -->
+  <div id="wizardApp">
+
+    <!-- Header & Progress (Screenshots 7-10) -->
+    <div class="wizard-header">
+      <button type="button" class="wizard-back-btn" id="btnStepBack" onclick="wizardPrevStep()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <div>
+        <div class="step-indicator" id="stepIndicatorLabel">Step 2 of 8</div>
+        <div class="step-name" id="stepNameLabel">Requirements</div>
+      </div>
+    </div>
+
+    <!-- Progress Track -->
+    <div class="progress-track">
+      <div class="progress-fill" id="wizardProgressBar" style="width: 25%;"></div>
+    </div>
+
+    <!-- ================= STEP 2: REQUIREMENTS (Page 7) ================= -->
+    <div id="wizardStepRequirements" class="wizard-step-pane">
+      <div class="input-group">
+        <label class="input-label" for="scriptTitle">Script title</label>
+        <input type="text" id="scriptTitle" class="form-input" value="{{ defaults.title }}" placeholder="e.g. Why Small Ports Win">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="scriptTopic">Topic</label>
+        <input type="text" id="scriptTopic" class="form-input" value="{{ defaults.topic }}" placeholder="What do you want your script to be about?">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="scriptDescription">Description</label>
+        <textarea id="scriptDescription" class="form-textarea" rows="3" placeholder="An explainer for supply chain beginners.">An explainer for supply chain beginners.</textarea>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="scriptAudience">Audience</label>
+        <input type="text" id="scriptAudience" class="form-input" value="Students" placeholder="e.g. Students, Founders, Creators">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" class="input-group">
+        <div>
+          <label class="input-label" for="scriptPlatform">Platform</label>
+          <select id="scriptPlatform" class="form-select">
+            <option value="youtube" {% if defaults.platform == 'youtube' %}selected{% endif %}>YouTube</option>
+            <option value="youtube_shorts" {% if defaults.platform == 'youtube_shorts' %}selected{% endif %}>YouTube Shorts</option>
+            <option value="instagram_reels" {% if defaults.platform == 'instagram_reels' %}selected{% endif %}>Instagram Reel</option>
+            <option value="tiktok" {% if defaults.platform == 'tiktok' %}selected{% endif %}>TikTok</option>
+            <option value="podcast" {% if defaults.platform == 'podcast' %}selected{% endif %}>Podcast</option>
+            <option value="short_film" {% if defaults.platform == 'short_film' %}selected{% endif %}>Short film</option>
+            <option value="movie" {% if defaults.platform == 'movie' %}selected{% endif %}>Movie Screenplay</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label" for="scriptDuration">Duration</label>
+          <input type="text" id="scriptDuration" class="form-input" value="{{ defaults.duration }}" placeholder="e.g. 8 min, 45 sec">
+        </div>
+      </div>
+
+      <!-- Tone Selectors (Pills: Informative, Friendly, Bold) -->
+      <div class="input-group">
+        <label class="input-label">Tone</label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="toneContainer">
+          <button type="button" class="btn-pill-sm active tone-btn" onclick="selectTone('Informative', this)">Informative</button>
+          <button type="button" class="btn-pill-sm tone-btn" onclick="selectTone('Friendly', this)">Friendly</button>
+          <button type="button" class="btn-pill-sm tone-btn" onclick="selectTone('Bold', this)">Bold</button>
+          <button type="button" class="btn-pill-sm tone-btn" onclick="selectTone('Cinematic', this)">Cinematic</button>
+          <button type="button" class="btn-pill-sm tone-btn" onclick="selectTone('Conversational', this)">Conversational</button>
+        </div>
+      </div>
+
+      <!-- More options expandable card (Screenshot 7) -->
+      <div class="card-surface" style="margin-bottom: 24px; cursor: pointer;" onclick="toggleMoreOptions()">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">More options</span>
+          <span style="font-size: 12px; color: var(--text-secondary);">Language, key points, CTA</span>
+        </div>
+        <div id="moreOptionsContent" style="display: none; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+          <div class="input-group">
+            <label class="input-label">Output Language</label>
+            <input type="text" id="scriptLanguage" class="form-input" value="English" placeholder="English, Spanish, French, etc.">
+          </div>
+          <div class="input-group" style="margin-bottom: 0;">
+            <label class="input-label">Key Points / Custom CTA</label>
+            <textarea id="scriptKeyPoints" class="form-textarea" rows="2" placeholder="Specific anecdotes, data points, or sign-off instructions"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 32px;">
+        <a href="{% url 'create' %}" class="btn btn-secondary">Back</a>
+        <button type="button" class="btn btn-primary" onclick="goToStep(3)">Continue</button>
+      </div>
+    </div>
+
+
+    <!-- ================= STEP 3: AI OPTIONS (Page 8) ================= -->
+    <div id="wizardStepAIOptions" class="wizard-step-pane" style="display: none;">
+      
+      <!-- Claude Model Selection (Page 8) -->
+      <div class="input-group">
+        <label class="input-label">Claude model</label>
+        <div class="radio-cards-group">
+
+          <!-- Claude Sonnet (Default) -->
+          <div class="radio-card selected" onclick="selectModel('claude-3-5-sonnet', this)">
+            <div class="radio-circle">
+              <div class="radio-circle-dot"></div>
+            </div>
+            <div>
+              <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">Claude Sonnet</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Balanced · default</div>
+            </div>
+          </div>
+
+          <!-- Claude Opus -->
+          <div class="radio-card" onclick="selectModel('claude-3-opus', this)">
+            <div class="radio-circle">
+              <div class="radio-circle-dot"></div>
+            </div>
+            <div>
+              <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">Claude Opus</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Deepest reasoning</div>
+            </div>
+          </div>
+
+          <!-- Claude Haiku -->
+          <div class="radio-card" onclick="selectModel('claude-3-haiku', this)">
+            <div class="radio-circle">
+              <div class="radio-circle-dot"></div>
+            </div>
+            <div>
+              <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">Claude Haiku</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Fastest</div>
+            </div>
+          </div>
+
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+          Only models enabled on your server are listed.
+        </p>
+      </div>
+
+      <!-- Creativity Slider (Page 8) -->
+      <div class="range-slider-container">
+        <div class="range-slider-label">
+          <span>Creativity · <strong id="creativityDisplay" style="color: var(--text-primary);">Balanced</strong></span>
+        </div>
+        <input type="range" min="0" max="100" value="50" class="range-slider" id="creativitySlider" oninput="updateCreativity(this.value)">
+      </div>
+
+      <!-- Script Length Pills (Short, Medium, Long) -->
+      <div class="input-group">
+        <label class="input-label">Script length</label>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-pill-sm length-btn" onclick="selectLength('Short', this)" style="flex: 1;">Short</button>
+          <button type="button" class="btn-pill-sm active-solid length-btn" onclick="selectLength('Medium', this)" style="flex: 1;">Medium</button>
+          <button type="button" class="btn-pill-sm length-btn" onclick="selectLength('Long', this)" style="flex: 1;">Long</button>
+        </div>
+      </div>
+
+      <!-- Knowledge Base Toggle (Page 8) -->
+      <div class="toggle-row">
+        <div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Use knowledge base</div>
+          <div style="font-size: 12px; color: var(--text-secondary);" id="kbSubtitle">Brand Guide · 4 documents</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="kbToggle" checked onchange="toggleKbOptions(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Knowledge Base Select (if enabled) -->
+      <div id="kbSelectGroup" class="input-group" style="margin-top: 10px;">
+        <select id="knowledgeBaseSelect" class="form-select" onchange="updateKbSubtitle(this)">
+          {% for kb in knowledge_bases %}
+            <option value="{{ kb.id }}">{{ kb.name }} · {{ kb.document_count }} documents</option>
+          {% empty %}
+            <option value="">General Knowledge · 0 documents</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 32px;">
+        <button type="button" class="btn btn-secondary" onclick="goToStep(2)">Back</button>
+        <button type="button" class="btn btn-primary" id="btnAnalyzeRequest" onclick="requestOutlineGeneration()">Analyse request</button>
+      </div>
+    </div>
+
+
+    <!-- ================= STEP 5: REVIEW OUTLINE (Page 9) ================= -->
+    <div id="wizardStepReviewOutline" class="wizard-step-pane" style="display: none;">
+
+      <!-- Requirements Analysed Summary Banner -->
+      <div class="card-surface" style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; border-color: rgba(255, 122, 61, 0.3);">
+        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255, 122, 61, 0.15); display: flex; align-items: center; justify-content: center; color: var(--accent-primary);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Requirements analysed</div>
+          <div style="font-size: 12px; color: var(--text-secondary);" id="outlineSummaryText">YouTube · informative · about 8 min</div>
+        </div>
+      </div>
+
+      <!-- 6 Numbered Outline Beats Container (Page 9) -->
+      <div id="outlineBeatsList">
+        <!-- Rendered dynamically by wizard.js -->
+      </div>
+
+      <!-- Bottom Actions -->
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 28px;">
+        <button type="button" class="btn btn-secondary" onclick="requestOutlineGeneration()">Regenerate</button>
+        <button type="button" class="btn btn-primary" onclick="startScriptWriting()">Approve and generate</button>
+      </div>
+    </div>
+
+
+    <!-- ================= STEP 6: WRITING YOUR SCRIPT (Page 10) ================= -->
+    <div id="wizardStepWriting" class="wizard-step-pane" style="display: none;">
+
+      <!-- Streaming Pill Badge -->
+      <div>
+        <div class="streaming-badge">
+          <div class="streaming-dot"></div>
+          <span id="streamingStatusLabel">Streaming from Claude Sonnet</span>
+        </div>
+      </div>
+
+      <!-- Status Checkmarks -->
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--status-success);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span style="color: var(--text-primary);">Request analysed</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--status-success);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span style="color: var(--text-primary);" id="sourceRetrievedLabel">Sources retrieved from Brand Guide</span>
+        </div>
+      </div>
+
+      <!-- Script Output Card with Blinking Cursor -->
+      <div class="card-surface" style="padding: 20px; margin-bottom: 16px; background-color: var(--bg-surface-elevated);">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: var(--accent-primary); text-transform: uppercase; margin-bottom: 6px;">HOOK</div>
+        <p id="liveHookText" style="font-size: 15px; color: var(--text-primary); line-height: 1.5; margin-bottom: 16px;">
+          Every big port makes headlines. The small ones quietly make money.
+        </p>
+
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: var(--accent-primary); text-transform: uppercase; margin-bottom: 6px;">INTRODUCTION</div>
+        <p id="liveIntroText" style="font-size: 15px; color: var(--text-primary); line-height: 1.5;">
+          Today we look at three regional ports that grew by doing less, not more<span class="live-cursor" id="blinkingCursor"></span>
+        </p>
+      </div>
+
+      <!-- Passages Used Badge (Page 10) -->
+      <div class="card-surface" style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding: 14px 16px;">
+        <div style="color: var(--accent-primary);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">3 passages used</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">Attached as sources to this script</div>
+        </div>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 24px;">
+        <button type="button" class="btn btn-secondary" onclick="stopGeneration()">Stop</button>
+        <button type="button" class="btn btn-primary" id="btnOpenEditor" onclick="openCompletedEditor()">Open editor</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/wizard.js' %}"></script>
+{% endblock %}

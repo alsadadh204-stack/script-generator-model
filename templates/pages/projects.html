@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Projects · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="app-container" style="padding-bottom: 90px;">
+
+  <!-- Header (Page 3) -->
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; margin-bottom: 20px;">
+    <h1 class="page-title">Projects</h1>
+
+    <!-- Offline Simulator Toggle Pill -->
+    <button type="button" class="btn-pill-sm" id="offlineSimulatorToggle" onclick="toggleOfflineSimulator()" style="font-size: 11px;">
+      <span id="offlineToggleLabel">Simulate Offline</span>
+    </button>
+  </div>
+
+  <!-- Offline Banner (Page 14: Shown when offline simulation is active) -->
+  <div id="offlineBanner" class="offline-banner" style="display: none;">
+    <div class="offline-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">You’re offline</div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+        Saved scripts stay editable. Changes sync when you reconnect.
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Projects Bar -->
+  <form method="GET" action="{% url 'projects' %}" class="search-container">
+    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input type="text" name="q" class="search-input" value="{{ search_q }}" placeholder="Search projects">
+  </form>
+
+  <!-- Filter Pills (All, Recent, Favorites) -->
+  <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+    <a href="{% url 'projects' %}?filter=all" class="btn-pill-sm {% if active_filter == 'all' %}active-solid{% endif %}">All</a>
+    <a href="{% url 'projects' %}?filter=recent" class="btn-pill-sm {% if active_filter == 'recent' %}active-solid{% endif %}">Recent</a>
+    <a href="{% url 'projects' %}?filter=favorites" class="btn-pill-sm {% if active_filter == 'favorites' %}active-solid{% endif %}">Favorites</a>
+  </div>
+
+  <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">Sorted by last edited</div>
+
+  <!-- Projects List (Page 3) -->
+  <div class="list-group" id="projectsListGroup">
+    {% for project in projects %}
+      <div class="script-item" style="cursor: default;">
+        <div class="script-left">
+          <div class="script-icon-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="15" y2="18"></line>
+            </svg>
+          </div>
+          <div class="script-info">
+            <div class="script-title">{{ project.name }}</div>
+            <div class="script-meta">
+              {{ project.script_count }} scripts · {{ project.knowledge_base_name }} · 
+              {% if forloop.first %}Today{% elif forloop.counter == 2 %}Yesterday{% elif forloop.counter == 3 %}Mon{% else %}Last week{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Favorite Star -->
+        <button type="button" onclick="toggleProjectFav({{ project.id }}, this)" style="cursor: pointer; padding: 6px; color: var(--text-muted);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="{% if project.is_favorite %}#FF7A3D{% else %}none{% endif %}" stroke="{% if project.is_favorite %}#FF7A3D{% else %}currentColor{% endif %}" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    {% empty %}
+      <div style="padding: 32px 16px; text-align: center; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <p style="color: var(--text-secondary); font-size: 14px;">No projects found.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Offline Script Sync List (Page 14: Appears in offline mode) -->
+  <div id="offlineScriptsSection" style="display: none; margin-top: 24px;">
+    <div class="section-title">Offline Sync Queue</div>
+    <div class="list-group">
+      {% for script in scripts|slice:":3" %}
+        <div class="script-item">
+          <div class="script-left">
+            <div class="script-icon-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="15" y2="18"></line>
+              </svg>
+            </div>
+            <div class="script-info">
+              <div class="script-title">{{ script.title }}</div>
+              <div class="script-meta" style="color: {% if forloop.first %}var(--status-warning){% else %}var(--status-success){% endif %};">
+                {% if forloop.first %}Edited offline · Waiting to sync{% else %}Synced{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Disabled Offline Button (Page 14) -->
+    <div style="margin-top: 20px;">
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+        Generating, rewriting and knowledge search need an internet connection.
+      </p>
+      <button type="button" class="btn btn-secondary" style="opacity: 0.5; cursor: not-allowed;" disabled>
+        Generate with AI · needs internet
+      </button>
+    </div>
+  </div>
+
+  <!-- Floating New Project CTA (Page 3) -->
+  <div style="position: fixed; bottom: 84px; right: 20px; z-index: 80;">
+    <button type="button" class="btn btn-primary" onclick="openNewProjectModal()" style="width: auto; padding: 14px 24px; box-shadow: 0 8px 24px rgba(255, 122, 61, 0.4);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      New project
+    </button>
+  </div>
+
+</div>
+
+<!-- New Project Modal -->
+<div id="newProjectOverlay" class="ai-drawer-overlay" onclick="closeNewProjectModal()"></div>
+<div id="newProjectSheet" class="modal-bottom-sheet" style="display: none;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Create Project</h2>
+    <button type="button" style="color: var(--text-muted); cursor: pointer;" onclick="closeNewProjectModal()">✕</button>
+  </div>
+
+  <form method="POST" action="{% url 'project_create' %}">
+    {% csrf_token %}
+    <div class="input-group">
+      <label class="input-label" for="projectName">Project Name</label>
+      <input type="text" id="projectName" name="name" class="form-input" placeholder="e.g. Harbor Stories" required>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" for="projectCategory">Category</label>
+      <select id="projectCategory" name="category" class="form-select">
+        <option value="Video">Video</option>
+        <option value="Film">Film</option>
+        <option value="Audio">Audio</option>
+        <option value="Marketing">Marketing</option>
+        <option value="Business">Business</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" for="projectKb">Knowledge Base Link</label>
+      <select id="projectKb" name="knowledge_base_id" class="form-select">
+        <option value="">No knowledge base</option>
+        {% for kb in knowledge_bases %}
+          <option value="{{ kb.id }}">{{ kb.name }} ({{ kb.document_count }} docs)</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
+      <button type="button" class="btn btn-secondary" onclick="closeNewProjectModal()">Cancel</button>
+      <button type="submit" class="btn btn-primary">Create</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let isOfflineSimulated = false;
+
+function toggleOfflineSimulator() {
+  isOfflineSimulated = !isOfflineSimulated;
+  const banner = document.getElementById("offlineBanner");
+  const offlineSection = document.getElementById("offlineScriptsSection");
+  const toggleBtn = document.getElementById("offlineSimulatorToggle");
+  const desktopBadge = document.getElementById("desktop-offline-badge");
+
+  if (isOfflineSimulated) {
+    banner.style.display = "flex";
+    offlineSection.style.display = "block";
+    toggleBtn.classList.add("active-solid");
+    toggleBtn.innerHTML = "Offline Active · Reconnect";
+    if (desktopBadge) desktopBadge.style.display = "flex";
+    showToast("Offline Mode Active. Cached scripts editable.");
+  } else {
+    banner.style.display = "none";
+    offlineSection.style.display = "none";
+    toggleBtn.classList.remove("active-solid");
+    toggleBtn.innerHTML = "Simulate Offline";
+    if (desktopBadge) desktopBadge.style.display = "none";
+    showToast("Reconnected! Syncing offline modifications…");
+  }
+}
+
+async function toggleProjectFav(projectId, btn) {
+  try {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const res = await fetch(`/projects/${projectId}/toggle-fav/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
+      }
+    });
+    const data = await res.json();
+    if (data.status === "success") {
+      const svg = btn.querySelector("svg");
+      if (data.is_favorite) {
+        svg.setAttribute("fill", "#FF7A3D");
+        svg.setAttribute("stroke", "#FF7A3D");
+        showToast("Project starred!");
+      } else {
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        showToast("Project unstarred.");
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function openNewProjectModal() {
+  document.getElementById("newProjectOverlay").style.display = "block";
+  document.getElementById("newProjectSheet").style.display = "block";
+}
+
+function closeNewProjectModal() {
+  document.getElementById("newProjectOverlay").style.display = "none";
+  document.getElementById("newProjectSheet").style.display = "none";
+}
+</script>
+{% endblock %}

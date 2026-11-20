@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Create · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="app-container">
+
+  <!-- Header (Page 2) -->
+  <div style="margin-top: 8px; margin-bottom: 20px;">
+    <h1 class="page-title">Create</h1>
+  </div>
+
+  <!-- Search Categories Input -->
+  <div class="search-container">
+    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input type="text" id="categorySearch" class="search-input" placeholder="Search categories" onkeyup="filterCategories()">
+  </div>
+
+  <!-- Filter Pills (All, Video, Film, Audio, Business) -->
+  <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 16px; margin-bottom: 8px; scrollbar-width: none;">
+    <button class="btn-pill-sm active-solid category-pill" onclick="filterByGroup('all', this)">All</button>
+    <button class="btn-pill-sm category-pill" onclick="filterByGroup('video', this)">Video</button>
+    <button class="btn-pill-sm category-pill" onclick="filterByGroup('film', this)">Film</button>
+    <button class="btn-pill-sm category-pill" onclick="filterByGroup('audio', this)">Audio</button>
+    <button class="btn-pill-sm category-pill" onclick="filterByGroup('business', this)">Business</button>
+  </div>
+
+  <!-- 2-Column Grid of Script Categories (Page 2) -->
+  <div class="category-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 8px;">
+
+    <!-- YouTube Scripts -->
+    <a href="{% url 'wizard_category' 'youtube' %}" class="card-surface card-surface-clickable category-card" data-group="video" data-name="youtube scripts">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">YouTube Scripts</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Hook to CTA</div>
+    </a>
+
+    <!-- YouTube Shorts -->
+    <a href="{% url 'wizard_category' 'shorts' %}" class="card-surface card-surface-clickable category-card" data-group="video" data-name="youtube shorts">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">YouTube Shorts</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Fast vertical hooks</div>
+    </a>
+
+    <!-- Instagram Reels -->
+    <a href="{% url 'wizard_category' 'reels' %}" class="card-surface card-surface-clickable category-card" data-group="video" data-name="instagram reels">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Instagram Reels</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Short visual beats</div>
+    </a>
+
+    <!-- TikTok Scripts -->
+    <a href="{% url 'wizard_category' 'tiktok' %}" class="card-surface card-surface-clickable category-card" data-group="video" data-name="tiktok scripts">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">TikTok Scripts</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Trend-ready</div>
+    </a>
+
+    <!-- Movie Screenplays -->
+    <a href="{% url 'wizard_category' 'screenplay' %}" class="card-surface card-surface-clickable category-card" data-group="film" data-name="movie screenplays">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Movie Screenplays</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Scenes and dialogue</div>
+    </a>
+
+    <!-- Short Films -->
+    <a href="{% url 'wizard_category' 'film' %}" class="card-surface card-surface-clickable category-card" data-group="film" data-name="short films">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Short Films</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Compact story arcs</div>
+    </a>
+
+    <!-- Web Series -->
+    <a href="{% url 'wizard_category' 'screenplay' %}" class="card-surface card-surface-clickable category-card" data-group="film" data-name="web series">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Web Series</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Episode beats</div>
+    </a>
+
+    <!-- Podcast Scripts -->
+    <a href="{% url 'wizard_category' 'podcast' %}" class="card-surface card-surface-clickable category-card" data-group="audio" data-name="podcast scripts">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Podcast Scripts</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Host and guest</div>
+    </a>
+
+    <!-- Product Commercial -->
+    <a href="{% url 'wizard_category' 'reels' %}" class="card-surface card-surface-clickable category-card" data-group="business" data-name="product commercial">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Product Commercial</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Problem to Solution</div>
+    </a>
+
+    <!-- Brand Story -->
+    <a href="{% url 'wizard_category' 'youtube' %}" class="card-surface card-surface-clickable category-card" data-group="business" data-name="brand story">
+      <div class="script-icon-box" style="margin-bottom: 14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Brand Story</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Hero story arc</div>
+    </a>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterByGroup(group, btn) {
+  document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active-solid'));
+  btn.classList.add('active-solid');
+
+  const cards = document.querySelectorAll('.category-card');
+  cards.forEach(card => {
+    if (group === 'all' || card.getAttribute('data-group') === group) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+function filterCategories() {
+  const query = document.getElementById('categorySearch').value.toLowerCase().trim();
+  const cards = document.querySelectorAll('.category-card');
+  cards.forEach(card => {
+    const name = card.getAttribute('data-name');
+    if (name.includes(query)) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}

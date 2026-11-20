@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ script.title }} · Script Editor · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="app-container" style="padding-bottom: 90px;">
+
+  <!-- Editor Top Navigation Bar (Page 11) -->
+  <div class="editor-top-bar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <a href="{% url 'home' %}" class="wizard-back-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </a>
+      <div>
+        <input type="text" id="scriptTitleInput" value="{{ script.title }}" style="font-size: 18px; font-weight: 700; color: var(--text-primary); border: none; background: transparent; padding: 0; outline: none; width: 100%;" onchange="autoSaveScript()">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 1px;">
+          <span id="saveStatusIndicator" style="color: var(--status-success);">Saved</span> · version <span id="scriptVersionDisplay">{{ script.version }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Undo / Redo / Favorite -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button type="button" class="wizard-back-btn" onclick="document.execCommand('undo')" title="Undo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+      </button>
+
+      <button type="button" class="wizard-back-btn" onclick="document.execCommand('redo')" title="Redo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+
+      <button type="button" class="wizard-back-btn" id="btnToggleFav" onclick="toggleScriptFav({{ script.id }})" title="Favorite">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="{% if script.is_favorite %}#FF7A3D{% else %}none{% endif %}" stroke="{% if script.is_favorite %}#FF7A3D{% else %}currentColor{% endif %}" stroke-width="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Real-time Stats Pill (Page 11: 1,240 words · 6,980 chars · about 8 min) -->
+  <div class="editor-stats-pill">
+    <span id="wordCountLabel">{{ script.word_count }} words</span>
+    <span>•</span>
+    <span id="charCountLabel">{{ script.char_count }} chars</span>
+    <span>•</span>
+    <span id="readingTimeLabel">about {{ script.estimated_speaking_minutes|floatformat:0 }} min</span>
+  </div>
+
+  <!-- Section Anchor Tabs (Hook, Intro, Main, Outro) -->
+  <div class="section-chips">
+    <button type="button" class="btn-pill-sm active-solid section-tab-btn" onclick="scrollToSection('sectionHook', this)">Hook</button>
+    <button type="button" class="btn-pill-sm section-tab-btn" onclick="scrollToSection('sectionIntro', this)">Intro</button>
+    <button type="button" class="btn-pill-sm section-tab-btn" onclick="scrollToSection('sectionMain', this)">Main</button>
+    <button type="button" class="btn-pill-sm section-tab-btn" onclick="scrollToSection('sectionOutro', this)">Outro</button>
+  </div>
+
+  <!-- ================= EDITABLE SECTIONS (Page 11) ================= -->
+  <div id="editorContentContainer" style="position: relative;">
+
+    <!-- Floating Contextual AI Popup Menu (Page 11) -->
+    <div id="floatingAiPopup" class="floating-ai-popup">
+      <button type="button" class="floating-ai-btn" onclick="triggerContextAction('Rewrite')">Rewrite</button>
+      <button type="button" class="floating-ai-btn" onclick="triggerContextAction('Expand')">Expand</button>
+      <button type="button" class="floating-ai-btn" onclick="triggerContextAction('Shorten')">Shorten</button>
+      <button type="button" class="floating-ai-btn" onclick="triggerContextAction('Improve')">Improve</button>
+      <button type="button" class="floating-ai-btn" onclick="openAiDrawer('Improve this selection')">More</button>
+    </div>
+
+    <!-- Section 1: HOOK -->
+    <div class="card-surface editor-section-card" id="sectionHook">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="editor-section-label">HOOK</div>
+        <button type="button" class="btn-pill-sm" style="padding: 3px 10px; font-size: 11px;" onclick="quickRewriteSection('hook')">AI Rewrite</button>
+      </div>
+      <textarea id="textareaHook" class="editor-textarea" rows="2" oninput="handleEditorInput()" placeholder="Write an irresistible opening hook...">{{ script.hook|default:"Every big port makes headlines. The small ones quietly make money." }}</textarea>
+    </div>
+
+    <!-- Section 2: INTRODUCTION -->
+    <div class="card-surface editor-section-card" id="sectionIntro">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="editor-section-label">INTRODUCTION</div>
+        <button type="button" class="btn-pill-sm" style="padding: 3px 10px; font-size: 11px;" onclick="quickRewriteSection('introduction')">AI Rewrite</button>
+      </div>
+      <textarea id="textareaIntro" class="editor-textarea" rows="3" oninput="handleEditorInput()" placeholder="Introduce the core thesis and why it matters...">{{ script.introduction|default:"Today we look at three regional ports that grew by doing less, not more." }}</textarea>
+    </div>
+
+    <!-- Section 3: MAIN CONTENT -->
+    <div class="card-surface editor-section-card" id="sectionMain">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="editor-section-label">MAIN CONTENT</div>
+        <button type="button" class="btn-pill-sm" style="padding: 3px 10px; font-size: 11px;" onclick="quickRewriteSection('main_content')">AI Rewrite</button>
+      </div>
+      <textarea id="textareaMain" class="editor-textarea" rows="8" oninput="handleEditorInput()" placeholder="Develop the primary scenes, arguments, and visual directions...">{{ script.main_content|default:"Point one: shorter queues beat bigger cranes.\n\nWhile mega-hubs invest billions into deeper berths and gigantic machinery, turnaround latency kills profitability. A medium-scale facility with predictable 6-hour docking cycles captures higher margin shipping every single quarter.\n\nPoint two: specialized throughput and agile customs.\n\nBy focusing on specific cargo categories—high-value refrigerated goods and express freight—smaller operations eliminate general congestion entirely. They don't compete on volume; they compete on velocity." }}</textarea>
+    </div>
+
+    <!-- Section 4: CONCLUSION & CALL TO ACTION -->
+    <div class="card-surface editor-section-card" id="sectionOutro">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="editor-section-label">CALL TO ACTION & OUTRO</div>
+        <button type="button" class="btn-pill-sm" style="padding: 3px 10px; font-size: 11px;" onclick="quickRewriteSection('call_to_action')">AI Rewrite</button>
+      </div>
+      <textarea id="textareaOutro" class="editor-textarea" rows="3" oninput="handleEditorInput()" placeholder="Sign off with a compelling call to action...">{{ script.call_to_action|default:"Subscribe for the next case study." }}</textarea>
+    </div>
+
+  </div>
+
+  <!-- ================= BOTTOM TOOLBAR (Page 11) ================= -->
+  <div class="editor-bottom-bar">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <!-- Bold -->
+      <button type="button" class="wizard-back-btn" onclick="formatText('bold')" title="Bold">
+        <span style="font-weight: 700; font-size: 15px;">B</span>
+      </button>
+
+      <!-- Italic -->
+      <button type="button" class="wizard-back-btn" onclick="formatText('italic')" title="Italic">
+        <span style="font-style: italic; font-weight: 600; font-size: 15px;">I</span>
+      </button>
+
+      <!-- Search / Find -->
+      <button type="button" class="wizard-back-btn" onclick="openFindPrompt()" title="Find">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+
+      <!-- Version History -->
+      <button type="button" class="wizard-back-btn" onclick="openVersionHistoryModal({{ script.id }})" title="Version History">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </button>
+
+      <!-- Export Bottom Sheet Trigger -->
+      <button type="button" class="wizard-back-btn" onclick="openExportModal()" title="Export Script">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Primary Ask AI Button (Page 11) -->
+    <div>
+      <button type="button" class="btn btn-primary" onclick="openAiDrawer()" style="padding: 10px 22px; font-size: 14px; width: auto; box-shadow: 0 4px 14px rgba(255, 122, 61, 0.35);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+        </svg>
+        Ask AI
+      </button>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ================= AI ASSISTANT SLIDE-OVER DRAWER (Page 12) ================= -->
+<div id="aiDrawerOverlay" class="ai-drawer-overlay" onclick="closeAiDrawer()"></div>
+
+<div id="aiAssistantDrawer" class="ai-drawer">
+  <!-- Header (Page 12) -->
+  <div class="ai-drawer-header">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button type="button" class="wizard-back-btn" onclick="closeAiDrawer()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <div>
+        <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">AI Assistant</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Context: <span id="drawerScriptContext">{{ script.title }}</span> · needs internet</div>
+      </div>
+    </div>
+    <button type="button" style="color: var(--text-muted); cursor: pointer;" onclick="closeAiDrawer()">✕</button>
+  </div>
+
+  <!-- Chat History Thread (Page 12) -->
+  <div class="ai-chat-thread" id="aiChatThread">
+    <!-- User bubble -->
+    <div class="chat-bubble-user">
+      Give me an alternative opening
+    </div>
+
+    <!-- AI card bubble with actions -->
+    <div class="chat-bubble-ai">
+      <div>Here is a quieter option: “The biggest port in the region handled the least cargo per hour.” Want me to build the next beat around that?</div>
+      <div class="chat-ai-actions">
+        <button type="button" class="btn-pill-sm active" style="padding: 6px 12px; font-size: 12px;" onclick="applyAiSuggestion('The biggest port in the region handled the least cargo per hour.', 'replace_hook')">Replace hook</button>
+        <button type="button" class="btn-pill-sm" style="padding: 6px 12px; font-size: 12px;" onclick="applyAiSuggestion('The biggest port in the region handled the least cargo per hour.', 'insert_below')">Insert below</button>
+      </div>
+    </div>
+
+    <!-- User bubble -->
+    <div class="chat-bubble-user">
+      Add suspense to the hook
+    </div>
+
+    <!-- AI typing indicator / message -->
+    <div class="chat-bubble-ai" id="aiStreamingBubble">
+      <div style="color: var(--text-secondary); font-style: italic;">
+        Claude is writing…
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Quick Suggestions (Page 12: Develop a character, Improve this scene) -->
+  <div style="display: flex; gap: 8px; padding: 8px 16px; overflow-x: auto; background-color: var(--bg-base); border-top: 1px solid var(--border-subtle); scrollbar-width: none;">
+    <button type="button" class="btn-pill-sm" onclick="sendQuickPrompt('Develop a character')">Develop a character</button>
+    <button type="button" class="btn-pill-sm" onclick="sendQuickPrompt('Improve this scene')">Improve this scene</button>
+    <button type="button" class="btn-pill-sm" onclick="sendQuickPrompt('Make it punchier')">Make it punchier</button>
+  </div>
+
+  <!-- Chat Input Bar -->
+  <div class="chat-input-bar">
+    <input type="text" id="aiChatInput" class="form-input" style="border-radius: var(--radius-pill); padding: 12px 18px;" placeholder="Ask Claude about this script" onkeypress="if(event.key==='Enter') sendAiMessage()">
+    <button type="button" class="btn-pill-sm active-solid" style="width: 44px; height: 44px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="sendAiMessage()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+</div>
+
+
+<!-- ================= EXPORT BOTTOM SHEET MODAL (Page 13) ================= -->
+<div id="exportModalOverlay" class="ai-drawer-overlay" onclick="closeExportModal()"></div>
+
+<div id="exportModalSheet" class="modal-bottom-sheet" style="display: none;">
+  <div style="width: 40px; height: 4px; background: var(--border-medium); border-radius: 2px; margin: 0 auto 16px;"></div>
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+    <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Export script</h2>
+    <button type="button" style="color: var(--text-muted); cursor: pointer;" onclick="closeExportModal()">✕</button>
+  </div>
+
+  <!-- 2x2 Grid of Formats (Page 13: PDF, DOCX, TXT, Markdown) -->
+  <div class="export-grid">
+    <div class="export-option-card selected" onclick="selectExportFormat('pdf', this)">
+      <div style="color: var(--accent-primary); margin-bottom: 8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">PDF</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Share or print</div>
+    </div>
+
+    <div class="export-option-card" onclick="selectExportFormat('docx', this)">
+      <div style="color: var(--accent-primary); margin-bottom: 8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">DOCX</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Edit in Word</div>
+    </div>
+
+    <div class="export-option-card" onclick="selectExportFormat('txt', this)">
+      <div style="color: var(--accent-primary); margin-bottom: 8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">TXT</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Plain text</div>
+    </div>
+
+    <div class="export-option-card" onclick="selectExportFormat('markdown', this)">
+      <div style="color: var(--accent-primary); margin-bottom: 8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">Markdown</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">.md file</div>
+    </div>
+  </div>
+
+  <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 20px;">
+    TXT and Markdown are made on your phone. PDF and DOCX are built by the server and need internet.
+  </p>
+
+  <button type="button" class="btn btn-primary" id="btnExecuteExport" onclick="triggerScriptDownload({{ script.id }})">Export as PDF</button>
+</div>
+
+
+<!-- ================= VERSION HISTORY MODAL ================= -->
+<div id="versionModalOverlay" class="ai-drawer-overlay" onclick="closeVersionModal()"></div>
+<div id="versionModalSheet" class="modal-bottom-sheet" style="display: none;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Version History</h2>
+    <button type="button" style="color: var(--text-muted); cursor: pointer;" onclick="closeVersionModal()">✕</button>
+  </div>
+  <div class="list-group" id="versionHistoryList" style="max-height: 300px; overflow-y: auto;">
+    <!-- Loaded dynamically -->
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/editor.js' %}"></script>
+{% endblock %}

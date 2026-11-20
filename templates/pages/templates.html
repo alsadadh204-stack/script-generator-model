@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Script Templates · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="app-container desktop-expanded" style="padding-bottom: 90px;">
+
+  <!-- Header -->
+  <div style="margin-top: 8px; margin-bottom: 24px;">
+    <h1 class="page-title">Script Templates</h1>
+    <p class="page-subtitle">Proven frameworks for YouTube retention, vertical social videos, indie films, and advertising.</p>
+  </div>
+
+  <!-- Filter Pills -->
+  <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 16px; margin-bottom: 16px; scrollbar-width: none;">
+    <a href="{% url 'templates' %}?category=all" class="btn-pill-sm {% if active_category == 'all' %}active-solid{% endif %}">All</a>
+    <a href="{% url 'templates' %}?category=video" class="btn-pill-sm {% if active_category == 'video' %}active-solid{% endif %}">Video</a>
+    <a href="{% url 'templates' %}?category=film" class="btn-pill-sm {% if active_category == 'film' %}active-solid{% endif %}">Film</a>
+    <a href="{% url 'templates' %}?category=audio" class="btn-pill-sm {% if active_category == 'audio' %}active-solid{% endif %}">Audio</a>
+    <a href="{% url 'templates' %}?category=business" class="btn-pill-sm {% if active_category == 'business' %}active-solid{% endif %}">Business</a>
+  </div>
+
+  <!-- Template Cards Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;">
+    {% for tmpl in templates %}
+      <div class="card-surface" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div class="script-icon-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="15" y2="18"></line>
+              </svg>
+            </div>
+            <span class="btn-pill-sm active" style="font-size: 11px; padding: 2px 8px;">{{ tmpl.get_category_display }}</span>
+          </div>
+
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px;">{{ tmpl.name }}</div>
+          <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600; margin-bottom: 8px;">{{ tmpl.tagline }}</div>
+          <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 14px;">{{ tmpl.description }}</div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 12px; color: var(--text-muted);">
+            {{ tmpl.default_duration }} · {{ tmpl.default_tone }}
+          </div>
+          <a href="{% url 'wizard' %}?title={{ tmpl.name|urlencode }}&topic={{ tmpl.tagline|urlencode }}&platform={{ tmpl.default_platform }}&duration={{ tmpl.default_duration }}&tone={{ tmpl.default_tone }}" class="btn-pill-sm active-solid">Use Template</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

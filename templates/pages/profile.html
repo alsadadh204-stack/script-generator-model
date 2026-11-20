@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Profile · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="app-container" style="padding-bottom: 90px;">
+
+  <!-- User Profile Header (Page 5) -->
+  <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px; margin-bottom: 24px;">
+    <div style="width: 58px; height: 58px; border-radius: 50%; background: #2A241F; border: 1px solid #3D352E; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #E5E1DC;">
+      {{ profile.get_initials }}
+    </div>
+    <div>
+      <h1 style="font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1.2;">
+        {{ profile.full_name|default:user.username }}
+      </h1>
+      <div style="font-size: 14px; color: var(--text-secondary); margin-top: 2px;">
+        {{ user.email }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscription Plan Card (Page 5: Pro plan) -->
+  <div class="card-surface" style="margin-bottom: 24px; padding: 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 15px; font-weight: 700; color: var(--text-primary);">{{ profile.plan }}</span>
+      <span style="font-size: 12px; color: var(--text-secondary);">Resets on {{ profile.plan_resets_on }}</span>
+    </div>
+
+    <!-- Usage Progress Bar -->
+    <div style="width: 100%; height: 5px; background: var(--bg-surface-elevated); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+      <div style="width: {{ profile.usage_percentage }}%; height: 100%; background: var(--accent-primary); border-radius: 3px;"></div>
+    </div>
+
+    <div style="font-size: 12px; color: var(--text-muted);">
+      Usage this month: {{ profile.scripts_generated_count }} scripts ({{ profile.usage_percentage }}% of quota)
+    </div>
+  </div>
+
+  <!-- Theme Selector (Page 5: Light | Dark | System) -->
+  <div style="margin-bottom: 24px;">
+    <div class="section-title">Theme</div>
+    <div style="display: flex; gap: 8px; background: var(--bg-surface); padding: 4px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle);">
+      <button type="button" class="btn-pill-sm {% if profile.theme == 'light' %}active-solid{% endif %}" style="flex: 1; border: none;" onclick="setAppTheme('light', this)">Light</button>
+      <button type="button" class="btn-pill-sm {% if profile.theme == 'dark' %}active-solid{% endif %}" style="flex: 1; border: none;" onclick="setAppTheme('dark', this)">Dark</button>
+      <button type="button" class="btn-pill-sm {% if profile.theme == 'system' %}active-solid{% endif %}" style="flex: 1; border: none;" onclick="setAppTheme('system', this)">System</button>
+    </div>
+  </div>
+
+  <!-- Settings Rows (Page 5) -->
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+
+    <!-- Language -->
+    <div class="card-surface card-surface-clickable" onclick="promptLanguageChange()">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 15px; font-weight: 500; color: var(--text-primary);">Language</span>
+        <span style="font-size: 14px; color: var(--text-secondary);" id="currentLanguageLabel">{{ profile.language }}</span>
+      </div>
+    </div>
+
+    <!-- AI Preferences -->
+    <div class="card-surface card-surface-clickable" onclick="promptModelChange()">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 15px; font-weight: 500; color: var(--text-primary);">AI preferences</span>
+        <span style="font-size: 14px; color: var(--text-secondary);" id="currentModelLabel">{{ profile.get_preferred_model_display }}</span>
+      </div>
+    </div>
+
+    <!-- Help and Support -->
+    <div class="card-surface card-surface-clickable" onclick="showHelpModal()">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 15px; font-weight: 500; color: var(--text-primary);">Help and support</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+    </div>
+
+    <!-- Log Out -->
+    <a href="{% url 'logout' %}" class="card-surface card-surface-clickable" style="display: block; border-color: rgba(248, 113, 113, 0.2);">
+      <div style="font-size: 15px; font-weight: 600; color: #F87171;">
+        Log out
+      </div>
+    </a>
+
+  </div>
+
+</div>
+
+<!-- Help Modal -->
+<div id="helpModalOverlay" class="ai-drawer-overlay" onclick="closeHelpModal()"></div>
+<div id="helpModalSheet" class="modal-bottom-sheet" style="display: none;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Help & Documentation</h2>
+    <button type="button" style="color: var(--text-muted); cursor: pointer;" onclick="closeHelpModal()">✕</button>
+  </div>
+  <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px;">
+    <strong>ScriptForge AI / SCRIPTLY AI</strong> converts simple concepts into studio-grade scripts through 6-beat outline generation, Anthropic Claude intelligence, and document retrieval.
+  </p>
+  <ul style="font-size: 13px; color: var(--text-secondary); line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+    <li>Step-by-step creation wizard for YouTube, Reels, TikTok, Screenplays</li>
+    <li>Ground scripts using uploaded Brand Voice PDFs & research notes</li>
+    <li>Interactive Ask AI assistant for contextual rewrites and suspense hooks</li>
+    <li>Direct export to PDF, DOCX, TXT, and Markdown</li>
+  </ul>
+  <button type="button" class="btn btn-primary" onclick="closeHelpModal()">Got it</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function setAppTheme(themeName, btn) {
+  document.querySelectorAll(".btn-pill-sm").forEach(b => b.classList.remove("active-solid"));
+  btn.classList.add("active-solid");
+
+  if (themeName === 'light') {
+    document.body.classList.add("light-theme");
+  } else {
+    document.body.classList.remove("light-theme");
+  }
+
+  try {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    await fetch("{% url 'update_profile_settings' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
+      },
+      body: JSON.stringify({ theme: themeName })
+    });
+    showToast(`Theme set to ${themeName}`);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function promptLanguageChange() {
+  const lang = prompt("Enter preferred language:", document.getElementById("currentLanguageLabel").textContent);
+  if (lang && lang.trim()) {
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      await fetch("{% url 'update_profile_settings' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify({ language: lang.trim() })
+      });
+      document.getElementById("currentLanguageLabel").textContent = lang.trim();
+      showToast("Language preference saved.");
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+
+async function promptModelChange() {
+  const choice = prompt("Select Claude Model (1: Claude Sonnet, 2: Claude Opus, 3: Claude Haiku):", "1");
+  let modelVal = "claude-3-5-sonnet";
+  let label = "Claude Sonnet";
+  if (choice === "2") {
+    modelVal = "claude-3-opus";
+    label = "Claude Opus";
+  } else if (choice === "3") {
+    modelVal = "claude-3-haiku";
+    label = "Claude Haiku";
+  }
+
+  try {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    await fetch("{% url 'update_profile_settings' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
+      },
+      body: JSON.stringify({ preferred_model: modelVal })
+    });
+    document.getElementById("currentModelLabel").textContent = label;
+    showToast(`Default model updated to ${label}.`);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function showHelpModal() {
+  document.getElementById("helpModalOverlay").style.display = "block";
+  document.getElementById("helpModalSheet").style.display = "block";
+}
+
+function closeHelpModal() {
+  document.getElementById("helpModalOverlay").style.display = "none";
+  document.getElementById("helpModalSheet").style.display = "none";
+}
+</script>
+{% endblock %}
